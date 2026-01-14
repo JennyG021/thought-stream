@@ -1,10 +1,16 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { ThoughtAnalysis } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAI = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey || apiKey === 'undefined') {
+    throw new Error("API Key is missing. Please set API_KEY in your environment variables.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export const analyzeThought = async (content: string, images?: string[]): Promise<{ analysis: ThoughtAnalysis, questions: string[] }> => {
+  const ai = getAI();
   const model = "gemini-3-flash-preview";
   
   const parts: any[] = [{ 
@@ -18,7 +24,7 @@ export const analyzeThought = async (content: string, images?: string[]): Promis
   }];
 
   if (images && images.length > 0) {
-    images.forEach((img) => {
+    for (const img of images) {
       const base64Data = img.includes(',') ? img.split(',')[1] : img;
       parts.push({
         inlineData: {
@@ -26,7 +32,7 @@ export const analyzeThought = async (content: string, images?: string[]): Promis
           data: base64Data
         }
       });
-    });
+    }
     parts[0].text += "\n\nPlease also consider the visual context from the attached images.";
   }
 
@@ -61,13 +67,19 @@ export const analyzeThought = async (content: string, images?: string[]): Promis
 };
 
 export const getReflectionPrompt = async (recentThoughts: string[]): Promise<string> => {
-    const model = "gemini-3-flash-preview";
-    const promptText = `Based on these recent thoughts: ${recentThoughts.join(' | ')}. Ask one intriguing reflection question to help the user grow or find clarity. Be crisp and professional.`;
-    
-    const response = await ai.models.generateContent({
-        model,
-        contents: promptText
-    });
-    
-    return response.text || "What's the one thing you want to achieve today?";
+    try {
+      const ai = getAI();
+      const model = "gemini-3-flash-preview";
+      const promptText = `Based on these recent thoughts: ${recentThoughts.join(' | ')}. Ask one intriguing reflection question to help the user grow or find clarity. Be crisp and professional.`;
+      
+      const response = await ai.models.generateContent({
+          model,
+          contents: promptText
+      });
+      
+      return response.text || "What's the one thing you want to achieve today?";
+    } catch (e) {
+      console.warn("Could not fetch reflection prompt (likely missing API key):", e);
+      return "What are you thinking about right now?";
+    }
 };
