@@ -1,0 +1,8 @@
+
+{
+  "name": "ThoughtStream",
+  "description": "An elegant, AI-powered personal journal and thought tracker with a visual timeline, calendar integration, and intelligent reflection prompts.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
